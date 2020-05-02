@@ -16,9 +16,12 @@ struct State {
     int transitionsCount;
 };
 
+/*
+ * ending at e7 = numerical constant
+ * ending at e8 = identifier
+ * ending at e10 = string
+ */
 struct State e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10;
-char* detects_element = "numerical constant";
-
 
 void initStates();
 void initAState(struct State* state, bool isEnd);
@@ -27,18 +30,39 @@ void addTransition(struct State *fromState, char *value, struct State *toState);
 
 bool isStringIn(char *input, struct State *state);
 
+struct State* getFinalState(char *input, struct State *state);
+
 int main() {
     initStates();
+
+    // Generic IO:
+//    while(true) {
+//        char *input;
+//        scanf("%s", input);
+//
+//        bool result = isStringIn(input,&e0);
+//        if(result)
+//            printf("YES! %s is a %s\n", input, detects_element);
+//        else
+//            printf("NO! %s is not a %s\n", input, detects_element);
+//    }
+
+    // Problem Specific IO
 
     while(true) {
         char *input;
         scanf("%s", input);
 
-        bool result = isStringIn(input,&e0);
-        if(result)
-            printf("YES! %s is a %s\n", input, detects_element);
+        struct State* finalState = getFinalState(input, &e0);
+
+        if (finalState == &e7)
+            printf("YES! %s is a numerical constant \n", input);
+        else if (finalState == &e8)
+            printf("YES! %s is an identifier \n", input);
+        else if (finalState == &e10)
+            printf("YES! %s is a string \n", input);
         else
-            printf("NO! %s is not a %s\n", input, detects_element);
+            printf("NO! %s is not recognized\n", input);
     }
 
 }
@@ -87,8 +111,18 @@ void initStates() {
 
 
     // ------- Identifiers -------
+    char* underline_transition = "_";
+    char* a_transition = "abcdefghijklmnopqrstuvwxyz";
+
+    addTransition(&e0, a_transition, &e8);
+
+    addTransition(&e8, a_transition, &e8);
+    addTransition(&e8, n_transition, &e8);
+    addTransition(&e8, underline_transition, &e8);
+
 
     // ------- Strings -------
+
 
 }
 
@@ -107,6 +141,10 @@ void addTransition(struct State *fromState, char *value, struct State *toState) 
 }
 
 bool isStringIn(char *input, struct State *state) {
+    return getFinalState(input, state)->isEnd;
+}
+
+struct State* getFinalState(char *input, struct State *state) {
     int input_index = 0;
     char c = input[input_index];
     struct State* current_state = state;
@@ -126,11 +164,11 @@ bool isStringIn(char *input, struct State *state) {
 
         if(!transitioned) {
             // string not recognized
-            return false;
+            return 0;
         }
 
         c = input[++input_index];
     }
 
-    return current_state->isEnd;
+    return current_state;
 }
