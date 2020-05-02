@@ -1,3 +1,6 @@
+// Created by Victor S. Melo
+// Feel free to modify and use this code as you wish.
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -11,6 +14,7 @@ struct Transition {
 };
 
 struct State {
+    char* name;
     bool isEnd;
     struct Transition *transitions;
     int transitionsCount;
@@ -23,63 +27,60 @@ struct State {
  */
 struct State e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10;
 
+// Init
 void initStates();
-void initAState(struct State* state, bool isEnd);
-
+void initAState(struct State* state, char* name, bool isEnd);
 void addTransition(struct State *fromState, char *value, struct State *toState);
 
+// Parsing
+struct State* getFinalState(char *input, struct State *state);
 bool isStringIn(char *input, struct State *state);
 
-struct State* getFinalState(char *input, struct State *state);
+// Aux functions
+char* getAllCharsExcept(char *exceptions);
 
 int main() {
     initStates();
 
-    // Generic IO:
-//    while(true) {
-//        char *input;
-//        scanf("%s", input);
-//
-//        bool result = isStringIn(input,&e0);
-//        if(result)
-//            printf("YES! %s is a %s\n", input, detects_element);
-//        else
-//            printf("NO! %s is not a %s\n", input, detects_element);
-//    }
-
-    // Problem Specific IO
+    printf("Automato to identify strings, identifiers or numerical constant in PASCAL.\n");
+    printf("Developed by \033[1;31mVictor S. Melo (Github: @vctrsmelo)\033[0m\n");
 
     while(true) {
-        char *input;
-        scanf("%s", input);
+        printf("Type input [exit() to finish]: ");
+        char buffer[100];
+        if (fgets(buffer, sizeof buffer, stdin))
+            buffer[strcspn(buffer, "\n")] = '\0';  // Lop off potential tailing \n
 
-        struct State* finalState = getFinalState(input, &e0);
+        if (strcmp(buffer, "exit()") == 0) //TODO: not working
+            break;
 
-        if (finalState == &e7)
-            printf("YES! %s is a numerical constant \n", input);
+        struct State* finalState = getFinalState(buffer, &e0);
+
+        if (finalState == &e2 || finalState == &e4 || finalState == &e7)
+            printf("YES! %s is a numerical constant in PASCAL\n\n", buffer);
         else if (finalState == &e8)
-            printf("YES! %s is an identifier \n", input);
+            printf("YES! %s is an identifier in PASCAL\n\n", buffer);
         else if (finalState == &e10)
-            printf("YES! %s is a string \n", input);
+            printf("YES! %s is a string in PASCAL\n\n", buffer);
         else
-            printf("NO! %s is not recognized\n", input);
+            printf("NO! %s is not recognized as identifier, string or numerical constant in PASCAL\n\n", buffer);
     }
 
 }
 
 
 void initStates() {
-    initAState(&e0, false);
-    initAState(&e1, false);
-    initAState(&e2, true);  // e2 is final state
-    initAState(&e3, false);
-    initAState(&e4, true);  // e4 is final state
-    initAState(&e5, false);
-    initAState(&e6, false);
-    initAState(&e7, true);  // e7 is final state
-    initAState(&e8, true); // e8 is final state
-    initAState(&e9, false);
-    initAState(&e10, true);// e10 is final state
+    initAState(&e0, "e0", false);
+    initAState(&e1,"e1", false);
+    initAState(&e2, "e2",true);  // e2 is final state
+    initAState(&e3, "e3",false);
+    initAState(&e4, "e4",true);  // e4 is final state
+    initAState(&e5, "e5",false);
+    initAState(&e6, "e6",false);
+    initAState(&e7, "e7",true);  // e7 is final state
+    initAState(&e8, "e8",true); // e8 is final state
+    initAState(&e9, "e9",false);
+    initAState(&e10, "e10",true);// e10 is final state
 
     // ------- Numerical Constants -------
 
@@ -122,12 +123,18 @@ void initStates() {
 
 
     // ------- Strings -------
+    char* string_transition = "'";
+    char* nabs_transition = getAllCharsExcept("'");
 
+    addTransition(&e0,string_transition, &e9);
+    addTransition(&e9, nabs_transition, &e9);
+    addTransition(&e9, string_transition, &e10);
+    addTransition(&e10, string_transition, &e9);
 
 }
 
-void initAState(struct State* state, bool isEnd) {
-    struct State aux = {.isEnd = isEnd, .transitionsCount = 0, .transitions = malloc(sizeof(struct Transition) * MAX_TRANSITIONS)};
+void initAState(struct State* state, char* name, bool isEnd) {
+    struct State aux = {.name = name, .isEnd = isEnd, .transitionsCount = 0, .transitions = malloc(sizeof(struct Transition) * MAX_TRANSITIONS)};
     *state = aux;
 }
 
@@ -171,4 +178,23 @@ struct State* getFinalState(char *input, struct State *state) {
     }
 
     return current_state;
+}
+
+char* getAllCharsExcept(char *exceptions) {
+
+    char* returned_chars = malloc(sizeof(char) * 126); // 126 is the number of valid chars in ASCII table
+
+    int j = 0; // adding index
+
+    int i;
+    for(i = 1; i < 127; i++) {
+        if (strchr(exceptions,(char) i) != NULL) {
+            continue;
+        }
+        returned_chars[j++] = i;
+    }
+
+    returned_chars[j] = '\0';
+
+    return returned_chars;
 }
